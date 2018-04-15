@@ -32,17 +32,20 @@ class RtPlot(tk.Frame, threading.Thread):
         self.fig.tight_layout()
 
         # create axis menu
-        self.axis_menu_frame = tk.Frame(self)
-        tk.Label(self.axis_menu_frame).pack(fill=tk.BOTH, expand=True)
+        plot_frame = tk.Frame(self)
+        axis_menu_frame = tk.Frame(plot_frame)
+        # tk.Label(axis_menu_frame).pack(fill=tk.BOTH, expand=True)
         for name, sp in self.subplots_dict.items():
-            sp['axis_menu'] = AxisMenu(self.axis_menu_frame, name)
+            tk.Label(axis_menu_frame).pack(fill=tk.BOTH, expand=True)
+            sp['axis_menu'] = AxisMenu(axis_menu_frame, name)
             sp['axis_menu'].pack()#fill=tk.Y, expand=True)
-            tk.Label(self.axis_menu_frame).pack(fill=tk.BOTH, expand=True)
-            self.axis_menu_frame.pack(side=tk.LEFT, fill=tk.Y)
+            tk.Label(axis_menu_frame).pack(fill=tk.BOTH, expand=True)
+        axis_menu_frame.pack(side=tk.LEFT, fill=tk.Y)
 
-        self.canvas = FigureCanvasTkAgg(self.fig, self)
+        self.canvas = FigureCanvasTkAgg(self.fig, plot_frame)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        plot_frame.pack()
 
     def run(self):
         self.running = True
