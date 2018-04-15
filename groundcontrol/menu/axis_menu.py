@@ -2,6 +2,7 @@ import tkinter as tk
 
 
 class AxisMenu(tk.Frame):
+    DEFAULT_VALUE_WIDTH = 6
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -12,7 +13,7 @@ class AxisMenu(tk.Frame):
         self.min_val = tk.DoubleVar()
         self.min_cb = tk.Checkbutton(min_frame, text='min', variable=self.min_checked)
         self.min_cb.pack(side=tk.LEFT)
-        self.min_entry = tk.Entry(min_frame, textvariable=self.min_val)
+        self.min_entry = tk.Entry(min_frame, textvariable=self.min_val, width=self.DEFAULT_VALUE_WIDTH)
         self.min_entry.pack(side=tk.RIGHT)
         min_frame.pack()
 
@@ -21,7 +22,7 @@ class AxisMenu(tk.Frame):
         self.max_val = tk.DoubleVar()
         self.max_cb = tk.Checkbutton(max_frame, text='max', variable=self.max_checked)
         self.max_cb.pack(side=tk.LEFT)
-        self.max_entry = tk.Entry(max_frame, textvariable=self.max_val)
+        self.max_entry = tk.Entry(max_frame, textvariable=self.max_val, width=self.DEFAULT_VALUE_WIDTH)
         self.max_entry.pack(side=tk.RIGHT)
         max_frame.pack()
 
