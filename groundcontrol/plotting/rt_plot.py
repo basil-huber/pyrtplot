@@ -20,23 +20,25 @@ class RtPlot(tk.Frame, threading.Thread):
         self.x_buffer = x_buffer
         self.lock = lock
 
-        self.axis_menu_frame = tk.Frame(self)
+        
 
         self.subplots_dict = {}
         self.fig, self.axes = subplots(len(data_buffer_dict),1, sharex=True)
-        tk.Label(self.axis_menu_frame).pack(fill=tk.BOTH, expand=True)
         for i,var in enumerate(sorted(data_buffer_dict)):
             sp = {}
             sp['axis'] = self.axes[i]
             sp['buffer'] = data_buffer_dict[var]
-            sp['axis_menu'] = AxisMenu(self.axis_menu_frame, var)
-            sp['axis_menu'].pack()#fill=tk.Y, expand=True)
-            tk.Label(self.axis_menu_frame).pack(fill=tk.BOTH, expand=True)    
             self.subplots_dict[var] = sp
-        self.axis_menu_frame.pack(side=tk.LEFT, fill=tk.Y)
         self.fig.tight_layout()
 
-        # self.draw_fig()
+        # create axis menu
+        self.axis_menu_frame = tk.Frame(self)
+        tk.Label(self.axis_menu_frame).pack(fill=tk.BOTH, expand=True)
+        for name, sp in self.subplots_dict.items():
+            sp['axis_menu'] = AxisMenu(self.axis_menu_frame, name)
+            sp['axis_menu'].pack()#fill=tk.Y, expand=True)
+            tk.Label(self.axis_menu_frame).pack(fill=tk.BOTH, expand=True)
+            self.axis_menu_frame.pack(side=tk.LEFT, fill=tk.Y)
 
         self.canvas = FigureCanvasTkAgg(self.fig, self)
         self.canvas.draw()
@@ -49,6 +51,9 @@ class RtPlot(tk.Frame, threading.Thread):
                 self.update()
             except TclError:
                break
+
+    def stop(self):
+        self.running = False
 
     def update(self):
         self.draw_fig()
