@@ -8,11 +8,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 import threading
 import time
-from groundcontrol.menu import AxisMenu
+from groundcontrol.menu import axis_menu
 
 class RtPlot(tk.Frame, threading.Thread):
     REFRESH_PERIOD = 0.01 # [s]
-    XAXIS_WIDTH_DEFAULT = 500
 
     def __init__(self, parent, data_buffer_dict, x_buffer, lock):
         tk.Frame.__init__(self, parent)
@@ -39,7 +38,7 @@ class RtPlot(tk.Frame, threading.Thread):
         # tk.Label(axis_menu_frame).pack(fill=tk.BOTH, expand=True)
         for name, sp in self.subplots_dict.items():
             tk.Label(axis_menu_frame).pack(fill=tk.BOTH, expand=True)
-            sp['axis_menu'] = AxisMenu(axis_menu_frame, name)
+            sp['axis_menu'] = axis_menu.Y(axis_menu_frame, name)
             sp['axis_menu'].pack()#fill=tk.Y, expand=True)
             tk.Label(axis_menu_frame).pack(fill=tk.BOTH, expand=True)
         axis_menu_frame.pack(side=tk.LEFT, fill=tk.Y)
@@ -51,25 +50,11 @@ class RtPlot(tk.Frame, threading.Thread):
         plot_frame.pack(fill=tk.BOTH, expand=True)
 
         # createx axis menu
-        xaxis_menu_frame = tk.Frame(self)
-        tk.Label(xaxis_menu_frame, width=AxisMenu.DEFAULT_VALUE_WIDTH).pack(fill=tk.NONE, expand=False, side=tk.LEFT)
-        tk.Label(xaxis_menu_frame).pack(fill=tk.X, expand=True, side=tk.LEFT)
-        tk.Label(xaxis_menu_frame, text='X axis').pack(side=tk.LEFT)
-        self.xaxis_width = self.XAXIS_WIDTH_DEFAULT
-        vcmd = (self.register(self.onValidate_xaxis_with),
-            '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        w = tk.IntVar()
-        w.set(self.xaxis_width)
-        e = tk.Entry(xaxis_menu_frame, width=AxisMenu.DEFAULT_VALUE_WIDTH, textvariable=w,
-            validate="key",validatecommand=vcmd)
-        e.pack(side=tk.LEFT)
-        tk.Label(xaxis_menu_frame, width=6).pack(side=tk.LEFT, expand=False, fill=tk.NONE)
-        self.pause_button = tk.Button(xaxis_menu_frame, text="Pause", command=self.pause_toggle)
-        self.pause_button.pack(side=tk.LEFT, expand=False, fill=tk.NONE)
-        self.paused = False
-        #tk.Label(xaxis_menu_frame).pack(fill=tk.X, expand=True, side=tk.LEFT)
-        self.fff = tk.Frame(xaxis_menu_frame).pack(fill=tk.X, expand=True, side=tk.LEFT)
-        xaxis_menu_frame.pack(expand = False, fill=tk.X)
+        bottom_bar = tk.Frame(self)
+        tk.Label(bottom_bar, width=axis_menu.Y.DEFAULT_VALUE_WIDTH).pack(fill=tk.NONE, expand=False, side=tk.LEFT)
+        self.xaxis_menu_frame = axis_menu.X(bottom_bar)
+        self.xaxis_menu_frame.pack(expand = True, fill=tk.X)
+        bottom_bar.pack(fill=tk.X, expand = True)
 
 
     def run(self):
@@ -82,48 +67,21 @@ class RtPlot(tk.Frame, threading.Thread):
 
     def stop(self):
         self.running = False
-
-    def pause_toggle(self):
-        if not self.paused:
-            self.paused = True
-            self.pause_button["text"] = "Play"
-            # NavigationToolbar2TkAgg(self.canvas, self.fff)
-
-        else:
-            self.paused = False
-            self.pause_button["text"] = "Pause"
         
     def update(self):
-        if not self.paused:
+        if not self.xaxis_menu_frame.is_paused():
             self.draw_fig()
         self.canvas.draw()
         time.sleep(self.REFRESH_PERIOD)
-
-    def onValidate_xaxis_with(self, d, i, P, s, S, v, V, W):
-        if P == "":
-            return True
-        try:
-            i = int(P)
-            if i > 0:
-                if self.lock:
-                    self.lock.acquire() # use lock to avoid changing size during plotting
-                self.xaxis_width = i
-                if self.lock:
-                    self.lock.release()
-                return True
-            else:
-                return False
-        except:
-            pass
-        return False
 
     def draw_fig(self):
         for sp in self.subplots_dict.values():
             axis = sp['axis']
             axis.clear()
+            point_count = self.xaxis_menu_frame.get_axis_width()
             if self.lock:
                 self.lock.acquire()
-            axis.plot(self.x_buffer.head_view(self.xaxis_width),sp['buffer'].head_view(self.xaxis_width))
+            axis.plot(self.x_buffer.head_view(point_count),sp['buffer'].head_view(point_count))
             if self.lock:
                 self.lock.release()
             axis.set_ylim(sp['axis_menu'].get_limits())
