@@ -45,7 +45,7 @@ class RtPlot(tk.Frame, threading.Thread):
         # createx axis menu
         bottom_bar = tk.Frame(self)
         tk.Label(bottom_bar, width=axis_menu.Y.DEFAULT_VALUE_WIDTH).pack(fill=tk.NONE, expand=False, side=tk.LEFT)
-        self.xaxis_menu_frame = axis_menu.X(bottom_bar)
+        self.xaxis_menu_frame = axis_menu.X(bottom_bar, axis_width_max=buffers.max_len())
         self.xaxis_menu_frame.pack(expand = True, fill=tk.X)
         bottom_bar.pack(fill=tk.X, expand = True)
 

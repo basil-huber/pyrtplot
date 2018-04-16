@@ -49,13 +49,15 @@ class Y(tk.Frame):
 class X(tk.Frame):
     AXIS_WIDTH_DEFAULT = 500
 
-    def __init__(self, parent, axis_width=None):
+    def __init__(self, parent, axis_width_max=None, axis_width=None):
         super().__init__(parent)
 
         if axis_width:
             self.axis_width = axis_width
         else:
             self.axis_width = X.AXIS_WIDTH_DEFAULT
+        self.axis_width_max = axis_width_max
+
         self.axis_width_var = tk.IntVar()
         self.axis_width_var.set(self.axis_width)
 
@@ -79,7 +81,7 @@ class X(tk.Frame):
             return True
         try:
             i = int(value)
-            if i > 0:
+            if i > 0 and (self.axis_width_max == None or i < self.axis_width_max):
                 self.axis_width = i
                 return True
             else:
