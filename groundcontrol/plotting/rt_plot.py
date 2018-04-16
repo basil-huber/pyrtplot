@@ -13,23 +13,16 @@ from groundcontrol.menu import axis_menu
 class RtPlot(tk.Frame, threading.Thread):
     REFRESH_PERIOD = 0.01 # [s]
 
-    def __init__(self, parent, data_buffer_dict, x_buffer, lock):
+    def __init__(self, parent, buffers):
         tk.Frame.__init__(self, parent)
         threading.Thread.__init__(self)
 
-        self.x_buffer = x_buffer
-        self.lock = lock
+        self.buffers = buffers
 
-        
-
+        self.fig, self.axes = subplots(len(buffers),1, sharex=True)
         self.subplots_dict = {}
-        self.fig, self.axes = subplots(len(data_buffer_dict),1, sharex=True)
-        for i,var in enumerate(sorted(data_buffer_dict)):
-            sp = {}
-            sp['axis'] = self.axes[i]
-            sp['buffer'] = data_buffer_dict[var]
-            sp['data'] = []
-            self.subplots_dict[var] = sp
+        for i,var in enumerate(sorted(buffers.variables())):
+            self.subplots_dict[var] = {'axis': self.axes[i]}
         self.fig.tight_layout()
 
         # create y axis menu
@@ -75,13 +68,10 @@ class RtPlot(tk.Frame, threading.Thread):
         time.sleep(self.REFRESH_PERIOD)
 
     def draw_fig(self):
-        for sp in self.subplots_dict.values():
+        point_count = self.xaxis_menu_frame.get_axis_width()
+        for var,sp in self.subplots_dict.items():
             axis = sp['axis']
             axis.clear()
-            point_count = self.xaxis_menu_frame.get_axis_width()
-            if self.lock:
-                self.lock.acquire()
-            axis.plot(self.x_buffer.head_view(point_count),sp['buffer'].head_view(point_count))
-            if self.lock:
-                self.lock.release()
+            points = self.buffers.head_view(var,point_count)
+            axis.plot(points[0], points[1])
             axis.set_ylim(sp['axis_menu'].get_limits())
