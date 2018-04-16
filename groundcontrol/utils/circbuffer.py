@@ -55,3 +55,6 @@ class BufferIndexedCollection():
     def __len__(self):
         return len(self.buffer_list)
 
+    def max_len(self):
+        return self.index_buffer.max_len
+
