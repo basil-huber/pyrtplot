@@ -37,10 +37,20 @@ class MainWindow(tk.Tk):
         self.checkbox_values = {}
         for group_name in sorted(buffers.keys()):
             self.checkbox_values[group_name] = tk.IntVar()
-            b = tk.Checkbutton(self, text=group_name,
+            frame = tk.Frame(self)
+            b = tk.Checkbutton(frame, text=group_name,
                 command=lambda group_name=group_name: self.com(group_name),
                 variable=self.checkbox_values[group_name])
-            b.pack(side="top")
+            b.pack(side=tk.LEFT, )
+            tk.Label(frame).pack(fill=tk.X, expand=True)
+            frame.pack(expand=True, fill=tk.X)
+            for var in buffers[group_name].get_variables():
+                print(var)
+                var_frame = tk.Frame(self)
+                tk.Label(var_frame, width=3).pack(side=tk.LEFT, fill=tk.NONE, expand=False)
+                tk.Checkbutton(var_frame,text=var).pack(side=tk.LEFT, fill=tk.NONE, expand=False)
+                tk.Label(var_frame).pack(side=tk.LEFT, fill=tk.X, expand=True)
+                var_frame.pack(fill=tk.X, expand=True)
 
         self.plot_windows = {}
 
