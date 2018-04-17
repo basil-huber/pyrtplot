@@ -31,12 +31,13 @@ class CircBuffer():
 class BufferIndexedCollection():
     def __init__(self, variables, max_len):
         self.buffer_list = OrderedDict()
+        self.variables = variables
         for v in variables:
             self.buffer_list[v[0]] = CircBuffer(max_len, v[1])
         self.index_buffer = CircBuffer(max_len, 1)
         self.lock = threading.Lock()
 
-    def variables(self):
+    def get_variables(self):
         return self.buffer_list.keys()
 
     def push(self, index, values):

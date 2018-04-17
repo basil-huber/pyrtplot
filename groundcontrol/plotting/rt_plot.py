@@ -21,7 +21,7 @@ class RtPlot(tk.Frame, threading.Thread):
 
         self.fig, self.axes = subplots(len(buffers),1, sharex=True)
         self.subplots_dict = {}
-        for i,var in enumerate(sorted(buffers.variables())):
+        for i,var in enumerate(sorted(buffers.get_variables())):
             self.subplots_dict[var] = {'axis': self.axes[i]}
         self.fig.tight_layout()
 
