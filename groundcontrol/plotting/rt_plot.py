@@ -34,7 +34,7 @@ class RtPlot(tk.Frame, threading.Thread):
         for name, sp in self.subplots_dict.items():
             tk.Label(axis_menu_frame).pack(fill=tk.BOTH, expand=True)
             sp['axis_menu'] = axis_menu.Y(axis_menu_frame, name)
-            sp['axis_menu'].pack()#fill=tk.Y, expand=True)
+            sp['axis_menu'].pack(fill=tk.Y, expand=False)
             tk.Label(axis_menu_frame).pack(fill=tk.BOTH, expand=True)
         axis_menu_frame.pack(side=tk.LEFT, fill=tk.Y)
 
@@ -49,7 +49,7 @@ class RtPlot(tk.Frame, threading.Thread):
         tk.Label(bottom_bar, width=axis_menu.Y.DEFAULT_VALUE_WIDTH).pack(fill=tk.NONE, expand=False, side=tk.LEFT)
         self.xaxis_menu_frame = axis_menu.X(bottom_bar, axis_width_max=buffers.max_len())
         self.xaxis_menu_frame.pack(expand = True, fill=tk.X)
-        bottom_bar.pack(fill=tk.X, expand = True)
+        bottom_bar.pack(fill=tk.X, expand = False)
 
     def pause(self):
         self.paused = True
