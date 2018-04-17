@@ -8,7 +8,7 @@ class Y(tk.Frame):
         super().__init__(parent)
 
         tk.Label(self, text=name, font=(None, self.FONT_SIZE_NAME)).pack()
-        tk.Label(self, text='Y axis').pack(side=tk.TOP)
+        # tk.Label(self, text='Y axis').pack(side=tk.TOP)
 
         max_frame = tk.Frame(self)
         self.max_checked = tk.IntVar()
