@@ -74,63 +74,10 @@ class MainWindow(tk.Tk):
         if not group_name in self.plot_windows:
             window = SubWindow(self, self.checkbox_values[group_name])
             window.title(group_name)
-            rt_plot = RtPlot(window, buffers[group_name])
+            rt_plot = RtPlot(window, self.buffers[group_name])
             rt_plot.pack(fill=tk.BOTH, expand=True)
             window.set_thread(rt_plot)
             rt_plot.start()
             self.plot_windows[group_name] = window
         else:
             self.plot_windows[group_name].toggle_visible()
-
-
-filename = 'LOG_0.LOG'
-
-max_len = 1000
-
-with LineParser(filename) as parser:
-    groups = parser.parse_groups()
-    buffers = {}
-    for group in groups.values():
-        variables = group['variables']
-        #var_list = [(var, variables[var]['nb']) for var in variables]
-        i = 0
-        var_list = []
-        for var in variables:
-            var_list.append((var, variables[var]['nb']))
-            i+= 1
-            if i >= 3:
-                break
-        buffers[group['name']] = BufferIndexedCollection(var_list, max_len)
-
-    group_buffer_indices = {group: 1 for group in buffers}
-    class ParserThread(threading.Thread):
-        def __init__(self, daemon=True):
-            threading.Thread.__init__(self, daemon=True)
-        def run(self):
-            try:
-                for entry in parser:
-                    var_name = entry[0]
-                    values = []
-                    i0 = 0
-                    for var in buffers[var_name].variables:
-                        i1 = i0 + var[1]
-                        values.append(entry[1][i0:i1])
-                        i0 = i1
-                    buffers[var_name].push(group_buffer_indices[var_name], values)
-                    group_buffer_indices[var_name] += 1
-
-                    time.sleep(0.0001)
-            except ValueError:
-                pass
-
-
-
-    
-    
-
-    parser_thread = ParserThread()
-    parser_thread.start()
-
-    root = MainWindow(buffers)
-    root.mainloop()
-    
