@@ -15,7 +15,7 @@ class RtPlot(tk.Frame, threading.Thread):
 
     def __init__(self, parent, buffers):
         tk.Frame.__init__(self, parent)
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, daemon=True)
 
         self.buffers = buffers
 
