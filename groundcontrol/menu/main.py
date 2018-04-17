@@ -11,6 +11,7 @@ import time
 class SubWindow(tk.Toplevel):
     def __init__(self, parent, checkbox_var):
         tk.Toplevel.__init__(self, parent)
+        self.thread  = None
         self.is_visible = True
         self.checkbox_var = checkbox_var
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -18,13 +19,21 @@ class SubWindow(tk.Toplevel):
     def toggle_visible(self):
         if self.is_visible:
             self.withdraw()
+            if self.thread:
+                self.thread.pause()
         else:
             self.deiconify()
+            if self.thread:
+                self.thread.resume()
         self.is_visible = not self.is_visible
+
     def on_closing(self):
         if self.is_visible:
             self.toggle_visible()
             self.checkbox_var.set(0)
+
+    def set_thread(self,thread):
+        self.thread = thread
 
 from tkinter import messagebox
 class MainWindow(tk.Tk):
@@ -45,7 +54,6 @@ class MainWindow(tk.Tk):
             tk.Label(frame).pack(fill=tk.X, expand=True)
             frame.pack(expand=True, fill=tk.X)
             for var in buffers[group_name].get_variables():
-                print(var)
                 var_frame = tk.Frame(self)
                 tk.Label(var_frame, width=3).pack(side=tk.LEFT, fill=tk.NONE, expand=False)
                 tk.Checkbutton(var_frame,text=var).pack(side=tk.LEFT, fill=tk.NONE, expand=False)
@@ -68,6 +76,7 @@ class MainWindow(tk.Tk):
             window.title(group_name)
             rt_plot = RtPlot(window, buffers[group_name])
             rt_plot.pack(fill=tk.BOTH, expand=True)
+            window.set_thread(rt_plot)
             rt_plot.start()
             self.plot_windows[group_name] = window
         else:

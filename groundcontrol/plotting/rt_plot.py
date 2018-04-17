@@ -16,6 +16,8 @@ class RtPlot(tk.Frame, threading.Thread):
     def __init__(self, parent, buffers):
         tk.Frame.__init__(self, parent)
         threading.Thread.__init__(self, daemon=True)
+        self.paused = False
+        self.resume_event = threading.Event()
 
         self.buffers = buffers
 
@@ -49,11 +51,22 @@ class RtPlot(tk.Frame, threading.Thread):
         self.xaxis_menu_frame.pack(expand = True, fill=tk.X)
         bottom_bar.pack(fill=tk.X, expand = True)
 
+    def pause(self):
+        self.paused = True
+
+    def resume(self):
+        if self.paused:
+            self.resume_event.set()
 
     def run(self):
         self.running = True
         while self.running:
             try:
+                if self.paused:
+                    self.resume_event.wait()
+                    self.resume_event.clear()
+                    self.paused = False
+
                 self.update()
             except TclError:
                break
