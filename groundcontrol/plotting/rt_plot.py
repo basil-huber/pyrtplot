@@ -53,6 +53,8 @@ class RtPlot(tk.Frame, threading.Thread):
         tk.Label(bottom_bar, width=axis_menu.Y.DEFAULT_VALUE_WIDTH).pack(fill=tk.NONE, expand=False, side=tk.LEFT)
         self.xaxis_menu_frame = axis_menu.X(bottom_bar, axis_width_max=buffers.max_len())
         self.xaxis_menu_frame.pack(expand = True, fill=tk.X)
+        self.xaxis_menu_frame.add_pause_callback(self.pause)
+        self.xaxis_menu_frame.add_play_callback(self.resume)
         bottom_bar.pack(fill=tk.X, expand = False)
 
     def pause(self):
@@ -79,8 +81,7 @@ class RtPlot(tk.Frame, threading.Thread):
         self.running = False
         
     def update(self):
-        if not self.xaxis_menu_frame.is_paused():
-            self.draw_fig()
+        self.draw_fig()
         self.canvas.draw()
         time.sleep(self.REFRESH_PERIOD)
 
@@ -133,7 +134,6 @@ class RtSubplot():
     def set_visible(self, visible):
         if visible == self.visible:
             return
-        print('RtSubplot: %s: setting visible %r' % (self.variable, visible))
         if not visible:
             self.axis_menu_frame.pack_forget()
 
@@ -141,7 +141,6 @@ class RtSubplot():
         
         for callback in self.set_visible_callbacks:
             callback(visible, self)
-            print('calling %s' % (callback))
         #show()
 
     def set_axes(self, axes):

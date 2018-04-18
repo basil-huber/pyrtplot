@@ -66,6 +66,8 @@ class X(tk.Frame):
         else:
             self.axis_width = X.AXIS_WIDTH_DEFAULT
         self.axis_width_max = axis_width_max
+        self.pause_callbacks = []
+        self.play_callbacks = []
 
         self.axis_width_var = tk.IntVar()
         self.axis_width_var.set(self.axis_width)
@@ -105,14 +107,23 @@ class X(tk.Frame):
     def is_paused(self):
         return self.paused
 
+    def add_pause_callback(self, callback):
+        self.pause_callbacks.append(callback)
+
+    def add_play_callback(self, callback):
+        self.play_callbacks.append(callback)
+
     def pause_toggle(self):
         if not self.paused:
             self.paused = True
             self.pause_button["text"] = "Play"
+            for callback in self.pause_callbacks:
+                callback()
             # NavigationToolbar2TkAgg(self.canvas, self.fff)
-
         else:
             self.paused = False
             self.pause_button["text"] = "Pause"
+            for callback in self.play_callbacks:
+                callback()
 
     
