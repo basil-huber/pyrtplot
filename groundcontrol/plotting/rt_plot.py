@@ -1,14 +1,18 @@
 from groundcontrol.utils import CircBuffer
-from pylab import *
+from groundcontrol.menu import axis_menu
+
 import tkinter as tk
 from _tkinter import TclError
+
+from pylab import *
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
+
 import threading
 import time
-from groundcontrol.menu import axis_menu
+from collections import OrderedDict
 
 class RtPlot(tk.Frame, threading.Thread):
     REFRESH_PERIOD = 0.01 # [s]
@@ -21,21 +25,21 @@ class RtPlot(tk.Frame, threading.Thread):
 
         self.buffers = buffers
 
-        self.fig, self.axes = subplots(len(buffers),1, sharex=True)
-        self.subplots_dict = {}
-        for i,var in enumerate(sorted(buffers.get_variables())):
-            self.subplots_dict[var] = {'axis': self.axes[i]}
+        # create matplotlib figure
+        self.fig, axes = subplots(len(buffers),1, sharex=True)
         self.fig.tight_layout()
 
+        # create subplots
+        self.subplots_dict = OrderedDict()
+        for i,var in enumerate(buffers.get_variables()):
+            self.subplots_dict[var] = RtSubplot(axes[i], var)
+            self.subplots_dict[var].add_set_visible_callback(self.subplot_set_visible_callback)
+        
         # create y axis menu
         plot_frame = tk.Frame(self)
         axis_menu_frame = tk.Frame(plot_frame)
-        # tk.Label(axis_menu_frame).pack(fill=tk.BOTH, expand=True)
-        for name, sp in self.subplots_dict.items():
-            tk.Label(axis_menu_frame).pack(fill=tk.BOTH, expand=True)
-            sp['axis_menu'] = axis_menu.Y(axis_menu_frame, name)
-            sp['axis_menu'].pack(fill=tk.Y, expand=False)
-            tk.Label(axis_menu_frame).pack(fill=tk.BOTH, expand=True)
+        for subplot in self.subplots_dict.values():
+            subplot.create_axis_menu(axis_menu_frame).pack(fill=tk.Y, expand=True)
         axis_menu_frame.pack(side=tk.LEFT, fill=tk.Y)
 
         # create canvas for plotting
@@ -82,9 +86,63 @@ class RtPlot(tk.Frame, threading.Thread):
 
     def draw_fig(self):
         point_count = self.xaxis_menu_frame.get_axis_width()
-        for var,sp in self.subplots_dict.items():
-            axis = sp['axis']
-            axis.clear()
-            points = self.buffers.head_view(var,point_count)
-            axis.plot(points[0], points[1])
-            axis.set_ylim(sp['axis_menu'].get_limits())
+        for subplot in self.subplots_dict.values():
+            subplot.plot(self.buffers.head_view(subplot.variable, point_count))
+
+    def subplot_set_visible_callback(self, visible, subplot):
+        self.arrange_subplots()
+
+    def arrange_subplots(self):
+        self.fig.clear()
+        # find number of visible plots
+        visible_subplots = []
+        for name,subplot in self.subplots_dict.items():
+            if subplot.visible:
+                visible_subplots.append(subplot)
+
+        for i,subplot in enumerate(visible_subplots):
+            subplot.set_axes(self.fig.add_subplot(len(visible_subplots),1,i+1))
+        self.fig.tight_layout()
+
+
+
+class RtSubplot():
+    def __init__(self, axes, variable):
+        self.axes = axes
+        self.variable = variable
+
+        self.visible = True
+        self.set_visible_callbacks = []
+
+    def create_axis_menu(self, parent):
+        self.axis_menu_frame = tk.Frame(parent)
+        tk.Label(self.axis_menu_frame).pack(fill=tk.BOTH, expand=True)
+        self.axis_menu = axis_menu.Y(self.axis_menu_frame, self.variable, self.set_visible)
+        self.axis_menu.pack(fill=tk.Y, expand=False)
+        tk.Label(self.axis_menu_frame).pack(fill=tk.BOTH, expand=True)
+        return self.axis_menu_frame
+
+    def plot(self, data):
+        self.axes.clear()
+        self.axes.plot(data[0], data[1])
+        self.axes.set_ylim(self.axis_menu.get_limits())
+
+    def add_set_visible_callback(self, callback):
+        self.set_visible_callbacks.append(callback)
+
+    def set_visible(self, visible):
+        if visible == self.visible:
+            return
+        print('RtSubplot: %s: setting visible %r' % (self.variable, visible))
+        if not visible:
+            self.axis_menu_frame.pack_forget()
+
+        self.visible = visible
+        
+        for callback in self.set_visible_callbacks:
+            callback(visible, self)
+            print('calling %s' % (callback))
+        #show()
+
+    def set_axes(self, axes):
+        self.axes = axes

@@ -4,10 +4,14 @@ import tkinter as tk
 class Y(tk.Frame):
     DEFAULT_VALUE_WIDTH = 6
     FONT_SIZE_NAME = 12
-    def __init__(self, parent, name):
+    def __init__(self, parent, name, set_visible_callback=None):
         super().__init__(parent)
+        self.set_visible_callback = set_visible_callback
 
-        tk.Label(self, text=name, font=(None, self.FONT_SIZE_NAME)).pack()
+        self.visible_var = tk.IntVar()
+        self.visible_var.set(1)
+        tk.Checkbutton(self, text=name, font=(None, self.FONT_SIZE_NAME),
+            variable=self.visible_var, command=self.set_visible).pack()
         # tk.Label(self, text='Y axis').pack(side=tk.TOP)
 
         max_frame = tk.Frame(self)
@@ -28,6 +32,11 @@ class Y(tk.Frame):
         min_entry.pack(side=tk.RIGHT)
         min_frame.pack()
 
+    def set_visible(self, visible=None):
+        if not visible:
+            visible = self.visible_var.get()
+        if self.set_visible_callback:
+            self.set_visible_callback(visible)
 
     def get_limits(self):
         min_lim = None

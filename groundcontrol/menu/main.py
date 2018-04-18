@@ -9,15 +9,15 @@ import time
 
 
 class SubWindow(tk.Toplevel):
-    def __init__(self, parent, checkbox_var):
+    def __init__(self, parent, title):
         tk.Toplevel.__init__(self, parent)
+        self.title(title)
         self.thread  = None
         self.is_visible = True
-        self.checkbox_var = checkbox_var
-        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
 
-    def toggle_visible(self):
-        if self.is_visible:
+    def set_visible(self, visible):
+        if self.is_visible and not visible:
             self.withdraw()
             if self.thread:
                 self.thread.pause()
@@ -35,49 +35,103 @@ class SubWindow(tk.Toplevel):
     def set_thread(self,thread):
         self.thread = thread
 
+
+class PlotHandler(tk.Frame):
+    def __init__(self, parent, group_name, data_buffer):
+        tk.Frame.__init__(self, parent)
+        self.parent = parent
+        self.group_name = group_name
+        self.data_buffer = data_buffer
+
+        self.subplot_visible_vars = {}
+        self.visible_var = None
+        self.window = None
+        self.rt_plot = None
+        self.visible = False
+        self.plot_visible_var = tk.IntVar()
+
+        self._create_menu()
+
+    def create_window(self):
+        self.window = SubWindow(self.parent, self.group_name)
+        #self.window.title(self.group_name)
+        self.rt_plot = RtPlot(self.window, self.data_buffer)
+        self.rt_plot.pack(fill=tk.BOTH, expand=True)
+        for var,subplot in self.rt_plot.subplots_dict.items():
+            subplot.add_set_visible_callback(self.set_visible_subplot_visible_callback)
+        self.window.set_thread(self.rt_plot)
+        self.window.protocol("WM_DELETE_WINDOW", self.on_window_closing)
+        self.rt_plot.start()
+
+    def _create_menu(self):
+        frame = tk.Frame(self)
+        tk.Checkbutton(frame, text=self.group_name,
+            command=self.set_plot_visible,
+            variable=self.plot_visible_var).pack(side=tk.LEFT, fill=tk.NONE, expand=False)
+        tk.Label(frame).pack(fill=tk.X, expand=True)
+        frame.pack(expand=True, fill=tk.X)
+        self.subplots_checkbox_frame = tk.Frame(self)
+        for var in self.data_buffer.get_variables():
+            var_frame = tk.Frame(self.subplots_checkbox_frame)
+            tk.Label(var_frame, width=3).pack(side=tk.LEFT, fill=tk.NONE, expand=False)
+            self.subplot_visible_vars[var] = tk.IntVar()
+            self.subplot_visible_vars[var].set(True)
+            tk.Checkbutton(var_frame, text=var, variable=self.subplot_visible_vars[var],
+                command=lambda var_name=var: self.set_visible_subplot(var_name)).pack(side=tk.LEFT, fill=tk.NONE, expand=False)
+            tk.Label(var_frame).pack(side=tk.LEFT, fill=tk.X, expand=True)
+            var_frame.pack(fill=tk.X, expand=True)
+
+    def set_plot_visible(self, visible=None):
+        if visible == None:
+            visible = self.plot_visible_var.get()
+        if visible == self.visible:
+            return
+        print('setting plot %s visible: %r' % (self.group_name, visible))
+        if visible:
+            self.subplots_checkbox_frame.pack()
+            if self.window == None:
+                self.create_window()
+            else:
+                self.window.set_visible(True)
+        else:
+            self.subplots_checkbox_frame.pack_forget()
+            self.window.set_visible(False)
+        self.plot_visible_var.set(visible)
+        self.visible = visible
+
+    def set_visible_subplot(self, var_name, visible=None):
+        if visible == None:
+            visible = self.subplot_visible_vars[var_name].get()
+        print('setting subplot %s:%s visible: %r' % (self.group_name, var_name, visible))
+
+        if self.rt_plot:
+            self.rt_plot.subplots_dict[var_name].set_visible(visible)
+
+    def set_visible_subplot_visible_callback(self, visible, subplot):
+        self.subplot_visible_vars[subplot.variable].set(visible)
+    
+    def on_window_closing(self):
+        self.set_plot_visible(False)
+
+        
+
+
 from tkinter import messagebox
 class MainWindow(tk.Tk):
     def __init__(self, buffers):
         tk.Tk.__init__(self)
         self.buffers = buffers
 
-        tk.Label(self, text="Houston").pack()
-
-        self.checkbox_values = {}
-        for group_name in sorted(buffers.keys()):
-            self.checkbox_values[group_name] = tk.IntVar()
-            frame = tk.Frame(self)
-            b = tk.Checkbutton(frame, text=group_name,
-                command=lambda group_name=group_name: self.com(group_name),
-                variable=self.checkbox_values[group_name])
-            b.pack(side=tk.LEFT, )
-            tk.Label(frame).pack(fill=tk.X, expand=True)
-            frame.pack(expand=True, fill=tk.X)
-            for var in buffers[group_name].get_variables():
-                var_frame = tk.Frame(self)
-                tk.Label(var_frame, width=3).pack(side=tk.LEFT, fill=tk.NONE, expand=False)
-                tk.Checkbutton(var_frame,text=var).pack(side=tk.LEFT, fill=tk.NONE, expand=False)
-                tk.Label(var_frame).pack(side=tk.LEFT, fill=tk.X, expand=True)
-                var_frame.pack(fill=tk.X, expand=True)
-
-        self.plot_windows = {}
+        self.plot_menus = {}
+        for group_name in sorted(self.buffers.keys()):
+            self.plot_menus[group_name] = PlotHandler(self, group_name, self.buffers[group_name])
+            self.plot_menus[group_name].pack(fill=tk.X, expand = True)
 
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
+
     def on_closing(self):
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
-            for rt_plot in self.plot_windows.values():
-                rt_plot.quit()
-            self.destroy()
-
-
-    def com(self, group_name):
-        if not group_name in self.plot_windows:
-            window = SubWindow(self, self.checkbox_values[group_name])
-            window.title(group_name)
-            rt_plot = RtPlot(window, self.buffers[group_name])
-            rt_plot.pack(fill=tk.BOTH, expand=True)
-            window.set_thread(rt_plot)
-            rt_plot.start()
-            self.plot_windows[group_name] = window
-        else:
-            self.plot_windows[group_name].toggle_visible()
+            for plot in self.plot_menus.values():
+                if plot.window:
+                    plot.window.quit()
+        self.destroy()
