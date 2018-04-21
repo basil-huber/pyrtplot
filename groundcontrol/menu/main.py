@@ -86,7 +86,6 @@ class PlotHandler(tk.Frame):
             visible = self.plot_visible_var.get()
         if visible == self.visible:
             return
-        print('setting plot %s visible: %r' % (self.group_name, visible))
         if visible:
             self.subplots_checkbox_frame.pack()
             if self.window == None:
@@ -102,7 +101,6 @@ class PlotHandler(tk.Frame):
     def set_visible_subplot(self, var_name, visible=None):
         if visible == None:
             visible = self.subplot_visible_vars[var_name].get()
-        print('setting subplot %s:%s visible: %r' % (self.group_name, var_name, visible))
 
         if self.rt_plot:
             self.rt_plot.subplots_dict[var_name].set_visible(visible)
@@ -127,6 +125,7 @@ class MainWindow(tk.Tk):
             self.plot_menus[group_name] = PlotHandler(self, group_name, self.buffers[group_name])
             self.plot_menus[group_name].pack(fill=tk.X, expand = True)
 
+        self.title('Houston')
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def on_closing(self):
