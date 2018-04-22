@@ -38,8 +38,8 @@ class RtPlot(tk.Frame, threading.Thread):
         # create y axis menu
         plot_frame = tk.Frame(self)
         axis_menu_frame = tk.Frame(plot_frame)
-        for subplot in self.subplots_dict.values():
-            subplot.create_axis_menu(axis_menu_frame).pack(fill=tk.Y, expand=True)
+        for i,subplot in enumerate(self.subplots_dict.values()):
+            subplot.create_axis_menu(axis_menu_frame).grid(row=i,column=0)#.pack(fill=tk.Y, expand=True)
         axis_menu_frame.pack(side=tk.LEFT, fill=tk.Y)
 
         # create canvas for plotting
@@ -135,7 +135,11 @@ class RtSubplot():
         if visible == self.visible:
             return
         if not visible:
-            self.axis_menu_frame.pack_forget()
+            #self.axis_menu_frame.pack_forget()
+            self.axis_menu_frame.grid_remove()
+        else:
+            self.axis_menu_frame.grid()
+            # self.axis_menu_frame.pack(fill=tk.Y, expand=False)
 
         self.visible = visible
         
