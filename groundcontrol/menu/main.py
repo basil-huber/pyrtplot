@@ -14,6 +14,13 @@ class SubWindow(tk.Toplevel):
         self.title(title)
         self.thread  = None
         self.is_visible = True
+
+        pos_x = parent.winfo_x() + parent.winfo_width()
+        pos_y = 0
+        width = parent.winfo_screenwidth()-pos_x
+        height = parent.winfo_screenheight()
+        self.geometry("{0}x{1}+{2}+{3}".format(
+            width, height, pos_x, pos_y))
         
 
     def set_visible(self, visible):
