@@ -4,11 +4,11 @@ from groundcontrol.menu import axis_menu
 import tkinter as tk
 from _tkinter import TclError
 
-from pylab import *
+#from pylab import *
 import matplotlib
-matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
+from matplotlib import pyplot as plt
 
 import threading
 import time
@@ -25,15 +25,10 @@ class RtPlot(tk.Frame, threading.Thread):
 
         self.buffers = buffers
 
-        # create matplotlib figure
-        self.fig, axes = subplots(len(buffers),1, sharex=True)
-        self.fig.tight_layout()
-
         # create subplots
         self.subplots_dict = OrderedDict()
         for i,var in enumerate(buffers.get_variables()):
             self.subplots_dict[var] = RtSubplot(var)
-            self.subplots_dict[var].set_axes(axes[i])
             self.subplots_dict[var].add_set_visible_callback(self.subplot_set_visible_callback)
         
         # create y axis menu
@@ -43,6 +38,9 @@ class RtPlot(tk.Frame, threading.Thread):
             subplot.create_axis_menu(self.yaxis_menu_frame).pack(fill=tk.Y, expand=True)
         self.yaxis_menu_frame.pack(side=tk.LEFT, fill=tk.Y)
         #self.yaxis_menu_frame.pack_propagate(False)
+
+        # create matplotlib figure
+        self.fig = Figure()
 
         # create canvas for plotting
         self.canvas = FigureCanvasTkAgg(self.fig, plot_frame)
@@ -59,7 +57,7 @@ class RtPlot(tk.Frame, threading.Thread):
         self.xaxis_menu_frame.add_play_callback(self.resume)
         bottom_bar.pack(fill=tk.X, expand = False)
 
-        #self.arrange_subplots()
+        self.arrange_subplots()
 
     def pause(self):
         self.paused = True
@@ -98,16 +96,16 @@ class RtPlot(tk.Frame, threading.Thread):
         self.arrange_subplots()
 
     def arrange_subplots(self):
-        self.fig.clear()
-
         # find visible subplots
         visible_subplots = []
         for name,subplot in self.subplots_dict.items():
             if subplot.visible:
                 visible_subplots.append(subplot)
 
-        for i,subplot in enumerate(visible_subplots):
-            subplot.set_axes(self.fig.add_subplot(len(visible_subplots),1,i+1))
+        self.fig.clear()
+        axes = self.fig.subplots(len(visible_subplots),1, sharex=True)
+        for axis, subplot in zip(axes,visible_subplots):
+            subplot.set_axis(axis)
         self.fig.tight_layout()
         
         # remove all yaxis menus
@@ -116,13 +114,11 @@ class RtPlot(tk.Frame, threading.Thread):
         for subplot in visible_subplots:
             subplot.get_axis_menu().pack(fill=tk.BOTH, expand=True)
 
-        self.fig.tight_layout()
-
 
 
 class RtSubplot():
     def __init__(self, variable):
-        self.axes = None
+        self.axis = None
         self.variable = variable
 
         self.visible = True
@@ -140,9 +136,9 @@ class RtSubplot():
         return self.axis_menu_frame
 
     def plot(self, data):
-        self.axes.clear()
-        self.axes.plot(data[0], data[1])
-        self.axes.set_ylim(self.axis_menu.get_limits())
+        self.axis.clear()
+        self.axis.plot(data[0], data[1])
+        self.axis.set_ylim(self.axis_menu.get_limits())
 
     def add_set_visible_callback(self, callback):
         self.set_visible_callbacks.append(callback)
@@ -152,10 +148,10 @@ class RtSubplot():
             return
 
         self.visible = visible
-        
+        self.axis_menu.visible_var.set(visible)
         for callback in self.set_visible_callbacks:
             callback(visible, self)
         #show()
 
-    def set_axes(self, axes):
-        self.axes = axes
+    def set_axis(self, axis):
+        self.axis = axis
