@@ -32,15 +32,17 @@ class RtPlot(tk.Frame, threading.Thread):
         # create subplots
         self.subplots_dict = OrderedDict()
         for i,var in enumerate(buffers.get_variables()):
-            self.subplots_dict[var] = RtSubplot(axes[i], var)
+            self.subplots_dict[var] = RtSubplot(var)
+            self.subplots_dict[var].set_axes(axes[i])
             self.subplots_dict[var].add_set_visible_callback(self.subplot_set_visible_callback)
         
         # create y axis menu
         plot_frame = tk.Frame(self)
-        axis_menu_frame = tk.Frame(plot_frame)
+        self.yaxis_menu_frame = tk.Frame(plot_frame)
         for i,subplot in enumerate(self.subplots_dict.values()):
-            subplot.create_axis_menu(axis_menu_frame).grid(row=i,column=0)#.pack(fill=tk.Y, expand=True)
-        axis_menu_frame.pack(side=tk.LEFT, fill=tk.Y)
+            subplot.create_axis_menu(self.yaxis_menu_frame).pack(fill=tk.Y, expand=True)
+        self.yaxis_menu_frame.pack(side=tk.LEFT, fill=tk.Y)
+        #self.yaxis_menu_frame.pack_propagate(False)
 
         # create canvas for plotting
         self.canvas = FigureCanvasTkAgg(self.fig, plot_frame)
@@ -56,6 +58,8 @@ class RtPlot(tk.Frame, threading.Thread):
         self.xaxis_menu_frame.add_pause_callback(self.pause)
         self.xaxis_menu_frame.add_play_callback(self.resume)
         bottom_bar.pack(fill=tk.X, expand = False)
+
+        #self.arrange_subplots()
 
     def pause(self):
         self.paused = True
@@ -95,7 +99,8 @@ class RtPlot(tk.Frame, threading.Thread):
 
     def arrange_subplots(self):
         self.fig.clear()
-        # find number of visible plots
+
+        # find visible subplots
         visible_subplots = []
         for name,subplot in self.subplots_dict.items():
             if subplot.visible:
@@ -104,12 +109,20 @@ class RtPlot(tk.Frame, threading.Thread):
         for i,subplot in enumerate(visible_subplots):
             subplot.set_axes(self.fig.add_subplot(len(visible_subplots),1,i+1))
         self.fig.tight_layout()
+        
+        # remove all yaxis menus
+        for child in self.yaxis_menu_frame.winfo_children():
+            child.pack_forget()
+        for subplot in visible_subplots:
+            subplot.get_axis_menu().pack(fill=tk.BOTH, expand=True)
+
+        self.fig.tight_layout()
 
 
 
 class RtSubplot():
-    def __init__(self, axes, variable):
-        self.axes = axes
+    def __init__(self, variable):
+        self.axes = None
         self.variable = variable
 
         self.visible = True
@@ -117,10 +130,13 @@ class RtSubplot():
 
     def create_axis_menu(self, parent):
         self.axis_menu_frame = tk.Frame(parent)
-        tk.Label(self.axis_menu_frame).pack(fill=tk.BOTH, expand=True)
+        tk.Label(self.axis_menu_frame, font=(None, 1), bg='red').pack(fill=tk.BOTH, expand=True)
         self.axis_menu = axis_menu.Y(self.axis_menu_frame, self.variable, self.set_visible)
-        self.axis_menu.pack(fill=tk.Y, expand=False)
-        tk.Label(self.axis_menu_frame).pack(fill=tk.BOTH, expand=True)
+        self.axis_menu.pack(fill=tk.X, expand=False)
+        tk.Label(self.axis_menu_frame, font=(None, 1), bg='green').pack(fill=tk.BOTH, expand=True)
+        return self.axis_menu_frame
+
+    def get_axis_menu(self):
         return self.axis_menu_frame
 
     def plot(self, data):
@@ -134,12 +150,6 @@ class RtSubplot():
     def set_visible(self, visible):
         if visible == self.visible:
             return
-        if not visible:
-            #self.axis_menu_frame.pack_forget()
-            self.axis_menu_frame.grid_remove()
-        else:
-            self.axis_menu_frame.grid()
-            # self.axis_menu_frame.pack(fill=tk.Y, expand=False)
 
         self.visible = visible
         
