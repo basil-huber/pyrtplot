@@ -1,12 +1,12 @@
 from setuptools import setup
 
-setup(name='groundcontrol',
+setup(name='pyrtplot',
       version='0.1',
-      description='Groundcontrol Utilities',
-      #url='http://github.com/storborg/funniest',
+      description='Python Real-time plotting',
+      #url='todo',
       author='Basil',
-      author_email='basil.huber@flyability.com',
-      license='FlyaPrivate',
-      packages=['groundcontrol','groundcontrol.utils', 'groundcontrol.plotting'],
+      author_email='basil.huber@gmail.com',
+      license='MIT License',
+      packages=['pyrtplot','pyrtplot.utils', 'pyrtplot.plotting'],
       install_requires=['numpy', 'matplotlib'],
       zip_safe=False)

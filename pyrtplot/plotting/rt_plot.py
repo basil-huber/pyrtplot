@@ -1,5 +1,5 @@
-from groundcontrol.utils import CircBuffer
-from groundcontrol.menu import axis_menu
+from pyrtplot.utils import CircBuffer
+from pyrtplot.menu import axis_menu
 
 import tkinter as tk
 from _tkinter import TclError

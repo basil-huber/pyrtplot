@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import tkinter as tk
 import threading
-from groundcontrol.plotting.rt_plot import RtPlot
+from pyrtplot.plotting.rt_plot import RtPlot
 from flightlog.parser import LineParser
-from groundcontrol.utils import CircBuffer, BufferIndexedCollection
+from pyrtplot.utils import CircBuffer, BufferIndexedCollection
 import time
 
 
